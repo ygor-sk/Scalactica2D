@@ -1,4 +1,4 @@
-
+@import sk.ygor.space2d.js.Scala2dJavascript.Elements
 @(
 
 )(
@@ -7,5 +7,51 @@
 )
 
 @sk.ygor.space2d.web.view.html._layout("Index") {
-    <h1>Index</h1>
+
+
+    <style>
+            .left {
+                background: grey;
+            }
+
+            .right {
+                background: black;
+            }
+
+            .main-wrapper {
+                height: 100vh;
+            }
+
+            .section {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                /*justify-content: center;*/
+                /*align-items: center;*/
+            }
+
+            .half {
+                background: #f9f9f9;
+                height: 50%;
+                width: 100%;
+                margin: 15px 0;
+            }
+
+            #space2dCanvas {
+                height: 100%;
+            }
+    </style>
+
+    <div class="main-wrapper">
+        <div class="section left col-xs-3">
+            <div class="half">
+                <h4>Top left</h4>
+                <button id="@Elements.toggleAnimation">Start</button>
+            </div>
+            <div class="half"><h4>Bottom left</h4></div>
+        </div>
+        <div class="section right col-xs-9">
+            <canvas id="space2dCanvas"></canvas>
+        </div>
+    </div>
 }

@@ -26,7 +26,7 @@ lazy val space2dJs = (project in file("modules/space2d-js"))
     name := "space2d-js",
     commonSettings,
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.5",
-//    libraryDependencies += "org.querki" %%% "jquery-facade" % "1.2",
+    libraryDependencies += "org.querki" %%% "jquery-facade" % "1.2",
     scalaJSUseMainModuleInitializer := true
   )
 
