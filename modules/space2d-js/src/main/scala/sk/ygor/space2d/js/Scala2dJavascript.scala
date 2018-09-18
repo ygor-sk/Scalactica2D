@@ -2,7 +2,7 @@ package sk.ygor.space2d.js
 
 import org.querki.jquery._
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLCanvasElement, MouseEvent, WheelEvent}
+import org.scalajs.dom.raw.{Event, HTMLCanvasElement, MouseEvent, WheelEvent}
 
 import scala.scalajs.js.annotation.JSExport
 
@@ -11,8 +11,7 @@ object Scala2dJavascript {
 
   case class DragStatus(x: Double, y: Double, isOut: Boolean)
 
-  var dragStatusOption: Option[DragStatus] = None
-
+  var dragStatus: DragStatus = _
 
   @JSExport
   def main(): Unit = {
@@ -26,43 +25,67 @@ object Scala2dJavascript {
       // bind events
       $(Elements.toggleAnimation.idSelector).click(() => onToggleAnimation(animation))
       $(dom.window).resize(() => onWindowResize(canvas, animation))
+
+      canvas.oncontextmenu = (e: MouseEvent) => {
+        e.preventDefault()
+        false
+      }
+
+      dom.document.onselectstart = (_: Event) => {
+        if (dragStatus != null) {
+          // do not select text outside if animation during drag
+          false
+        }
+      }
+
+
       canvas.onmousewheel = onWheel(animation)
 
       canvas.onmousedown = (e: MouseEvent) => {
-        dragStatusOption = Some(DragStatus(
+        // if (e.ctrlKey) {
+        dragStatus = DragStatus(
           e.clientX - canvas.getBoundingClientRect().left,
           e.clientY - canvas.getBoundingClientRect().top,
           isOut = false
-        ))
+        )
+        // }
       }
 
       dom.window.onmousemove = (e: MouseEvent) => {
-        dragStatusOption = dragStatusOption.map(dragStatus => {
+        if (dragStatus != null) {
           val x = e.clientX - canvas.getBoundingClientRect().left
           val y = e.clientY - canvas.getBoundingClientRect().top
           val deltaX = x - dragStatus.x
           val deltaY = y - dragStatus.y
           animation.dragBy(deltaX, deltaY)
-          dragStatus.copy(x = x, y = y)
-        })
+          dragStatus = dragStatus.copy(x = x, y = y)
+        }
       }
 
       canvas.onmouseout = (_: MouseEvent) => {
-        dragStatusOption = dragStatusOption.map(dragStatus => dragStatus.copy(isOut = true))
+        if (dragStatus != null) {
+          dragStatus = dragStatus.copy(isOut = true)
+        }
       }
 
       canvas.onmouseover = (_: MouseEvent) => {
-        dragStatusOption = dragStatusOption.map(dragStatus => dragStatus.copy(isOut = false))
+        if (dragStatus != null) {
+          dragStatus = dragStatus.copy(isOut = false)
+        }
       }
 
       dom.window.onmouseup = (_: MouseEvent) => {
-        dragStatusOption = None
+        dragStatus = null
       }
 
-//      $(canvas).bind("dragstart", (_: dom.Element, event: JQueryEventObject) => {
-//        dom.console.log(event)
-//        false
-//      })
+
+      dom.window.ondragstart = (_: MouseEvent) => {
+        false
+      }
+      //      $(canvas).bind("dragstart", (_: dom.Element, event: JQueryEventObject) => {
+      //        dom.console.log(event)
+      //        false
+      //      })
       // http://jsfiddle.net/r0Lowuc7/
 
       // explicitly fire event to render first frame

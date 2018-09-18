@@ -3,6 +3,7 @@ package sk.ygor.space2d.js
 import org.scalajs.dom
 import org.scalajs.dom.CanvasRenderingContext2D
 import org.scalajs.dom.raw.HTMLCanvasElement
+import sk.ygor.space2d.js.units._
 
 class Scala2dAnimation(canvas: HTMLCanvasElement) {
 
@@ -12,14 +13,26 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   private var animationRunning: Boolean = false
   private var lastAnimationRequestId: Int = 0
 
-  private var focus = Position(0, 0)
-  private var zoom = 1d
+  private var focus = Position(Meter(0), Meter(0))
+  private var zoom: Int = 10
 
   private var framesDrawn: Int = 0
   private var firstFrameDrawn: Double = 0d
 
   private val G = 800
-  private var planet = Planet(Position(0, 250), Speed(1.1, 0))
+
+  private val sun = Planet(
+    Position(Meter(0), Meter(0)),
+    Meter(50),
+    Speed(MeterPerSecond(1.1), MeterPerSecond(0))
+  )
+
+  private var planet = Planet(
+    Position(Meter(0), Meter(250)),
+    Meter(10),
+    Speed(MeterPerSecond(1.1), MeterPerSecond(0))
+  )
+
   private val trail: Array[Position] = new Array(1000)
   private var trailIdx = 0
 
@@ -30,40 +43,20 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     2500
   )
 
+  case class CanvasPosition(x: Double, y: Double)
 
-  case class Position(x: Double, y: Double) {
-
-    def acceleration: Acceleration = {
-      val distanceSquared = x * x + y * y
-      val accelaration = -G / distanceSquared
-      val distance = Math.sqrt(distanceSquared)
-      Acceleration(x * accelaration / distance, y * accelaration / distance)
-    }
-
-    def +(speed: Speed) = Position(x + speed.x, y + speed.y)
-  }
-
-  case class Speed(x: Double, y: Double) {
-    def /(d: Double) = Speed(x / d, y / d)
-
-    def *(d: Double) = Speed(x * d, y * d)
-
-    def +(speed: Speed) = Speed(x + speed.x, y + speed.y)
-
-    def +(acceleration: Acceleration) = Speed(x + acceleration.x, y + acceleration.y)
-  }
-
-  case class Acceleration(x: Double, y: Double) {
-    def /(d: Double) = Acceleration(x / d, y / d)
-
-    def *(d: Double) = Acceleration(x * d, y * d)
-
-    def +(acceleration: Acceleration) = Acceleration(x + acceleration.x, y + acceleration.y)
-  }
-
-  case class Planet(position: Position, speed: Speed)
+  case class Planet(position: Position, radius: Meter, speed: Speed)
 
   case class PlanetDerivative(speed: Speed, acceleration: Acceleration)
+
+  private def toCanvasPosition(position: Position): CanvasPosition = CanvasPosition(
+    toCanvasDistance(position.x - focuuuus.x) + (canvas.width / 2),
+    toCanvasDistance(position.y - focuuuus.y) + (canvas.height / 2)
+  )
+
+  private def toCanvasDistance(m: Meter): Double = m.value * zooooom
+
+  private def focuuuus: Position = focus
 
   private def draw(time: Double): Unit = {
     if (framesDrawn == 0) {
@@ -71,36 +64,38 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     }
     framesDrawn += 1
 
-    //    ctx.clearRect(-canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height)
-
-    // TODO: 10% slower
-    ctx.save
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.restore()
 
     // sun
+    val sunCanvasPosition = toCanvasPosition(Position(Meter(0), Meter(0)))
     ctx.fillStyle = "yellow"
     ctx.beginPath()
-    ctx.arc(0, 0, 50, 0, Math.PI * 2)
+    ctx.arc(sunCanvasPosition.x, sunCanvasPosition.y, toCanvasDistance(Meter(50)), 0, Math.PI * 2)
     ctx.fill()
 
     // earth
+    val planetCanvasPosition = toCanvasPosition(planet.position)
+
     ctx.strokeStyle = "white"
     ctx.lineWidth = 1
     ctx.fillStyle = "grey"
 
     ctx.beginPath()
-    ctx.arc(planet.position.x, planet.position.y, 10, 0, Math.PI * 2)
+    ctx.arc(planetCanvasPosition.x, planetCanvasPosition.y, toCanvasDistance(planet.radius), 0, Math.PI * 2)
     ctx.stroke()
     ctx.fill()
 
     ctx.fillStyle = "red"
     trail.foreach(position =>
       if (position != null) {
-        ctx.fillRect(position.x, position.y, 1, 1)
+        val trailCanvasPosition = toCanvasPosition(position)
+        ctx.fillRect(trailCanvasPosition.x, trailCanvasPosition.y, 1, 1)
       }
     )
+
+    //     draw mesh
+    //    val meshSize = ((1 - (zoom % 1)) * 10).toInt
+    //    for (int x =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 )
 
     if (animationRunning) {
       calculateStep()
@@ -116,9 +111,9 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     val precision = 10
     var cycle = precision
     while (cycle > 0) {
-      planet = nextUsingEuler(planet, precision)
-      //      planet = nextUsingRangeKutta(planet, precision)
-      //      planet = nextUsingMidpoint(planet, precision)
+//      planet = nextUsingEuler(planet, precision)
+            planet = nextUsingRangeKutta(planet, precision)
+//                  planet = nextUsingMidpoint(planet, precision)
       cycle -= 1
     }
     trail(trailIdx) = planet.position
@@ -130,38 +125,52 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
 
   def nextUsingEuler(planet: Planet, precision: Double): Planet = {
     val positionNew = planet.position + (planet.speed / precision)
-    val speedNew = planet.speed + (positionNew.acceleration / precision)
-    Planet(positionNew, speedNew)
+    val accelerationNew = acceleration(sun.position, planet.position)
+    val speedNew = planet.speed + (accelerationNew / precision)
+    planet.copy(position = positionNew, speed = speedNew)
   }
 
-  def nextUsingMidpoint(planet: Planet, precision: Double): Planet = {
-    val positionMid = planet.position + ((planet.speed / precision) / 2)
-    val speedNew = planet.speed + (positionMid.acceleration / precision)
-    val positionNew = planet.position + (((planet.speed + speedNew) / 2) / precision)
-    Planet(positionNew, speedNew)
-  }
-
-  def nextUsingRangeKutta(planet: Planet, precision: Double): Planet = {
-
-    def firstDerivative: PlanetDerivative =
-      PlanetDerivative(planet.speed, planet.position.acceleration)
-
-    def nextDerivative(derivative: PlanetDerivative, step: Double): PlanetDerivative = {
-      val newPosition = planet.position + derivative.speed * (step / precision)
-      val newSpeed = planet.speed + derivative.acceleration * (step / precision)
-      val newAcceleration = newPosition.acceleration
-      PlanetDerivative(newSpeed, newAcceleration)
+    def nextUsingMidpoint(planet: Planet, precision: Double): Planet = {
+      val positionMid = planet.position + ((planet.speed / precision) / 2)
+      val accelerationMid = acceleration(sun.position, positionMid)
+      val speedNew = planet.speed + (accelerationMid / precision)
+      val positionNew = planet.position + (((planet.speed + speedNew) / 2) / precision)
+      planet.copy(position = positionNew, speed = speedNew)
     }
 
-    val a = firstDerivative
-    val b = nextDerivative(a, 0.5)
-    val c = nextDerivative(b, 0.5)
-    val d = nextDerivative(c, 1)
-    Planet(
-      planet.position + ((a.speed + (b.speed + c.speed) * 2 + d.speed) / 6) / precision,
-      planet.speed + ((a.acceleration + (b.acceleration + c.acceleration) * 2 + d.acceleration) / 6) / precision
+    def nextUsingRangeKutta(planet: Planet, precision: Double): Planet = {
+
+      def firstDerivative: PlanetDerivative =
+        PlanetDerivative(planet.speed, acceleration(sun.position, planet.position))
+
+      def nextDerivative(derivative: PlanetDerivative, step: Double): PlanetDerivative = {
+        val newPosition = planet.position + derivative.speed * (step / precision)
+        val newSpeed = planet.speed + derivative.acceleration * (step / precision)
+        val newAcceleration = acceleration(sun.position, newPosition)
+        PlanetDerivative(newSpeed, newAcceleration)
+      }
+
+      val a = firstDerivative
+      val b = nextDerivative(a, 0.5)
+      val c = nextDerivative(b, 0.5)
+      val d = nextDerivative(c, 1)
+      planet.copy(
+        position = planet.position + ((a.speed + (b.speed + c.speed) * 2 + d.speed) / 6) / precision,
+        speed = planet.speed + ((a.acceleration + (b.acceleration + c.acceleration) * 2 + d.acceleration) / 6) / precision
+      )
+    }
+
+  def acceleration(centerPosition: Position, orbitingPosition: Position): Acceleration = {
+    val relativePosition = orbitingPosition - centerPosition
+    val distanceSquared = relativePosition.x * relativePosition.x + relativePosition.y * relativePosition.y
+    val accelaration: Double = -G / distanceSquared.value
+    val distance = Math.sqrt(distanceSquared.value)
+    Acceleration(
+      MeterPerSecondSquared(relativePosition.x.value * accelaration / distance),
+      MeterPerSecondSquared(relativePosition.y.value * accelaration / distance),
     )
   }
+
 
   def getAndResetFps(): Double = {
     val result = framesDrawn / (dom.window.performance.now() - firstFrameDrawn) * 1000
@@ -184,12 +193,23 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   }
 
   def zoomBy(wheelDelta: Double): Unit = {
-    val zoomDelta = -wheelDelta / 1000
-    if (zoom + zoomDelta > 0.1) {
-      zoom += zoomDelta
-    }
+    val zoomDelta = (-wheelDelta / 100).toInt
+    zoom = Math.max(zoom + zoomDelta, 0)
     dom.console.log(s"zoom set to: $zoom")
     rescale()
+  }
+
+  /**
+    * @return 1, 2, 3, .., 9, 10, 20, 30, ..., 90, 100, 200, 300, ..., 900, ...
+    */
+  private def zooooom: Double = {
+    val a = zoom / 9
+    val b = zoom % 9
+    val result = Math.pow(10, a) * (b + 1)
+    //    val result = 1 / Math.log10(zoom)
+    dom.console.log(s"zoom=$zoom, a=$a, b=$b, result=$result")
+    result
+
   }
 
   def isAnimationRunning: Boolean = animationRunning
@@ -202,14 +222,11 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   }
 
   def dragBy(deltaX: Double, deltaY: Double): Unit = {
-    focus = focus + Speed(deltaX, deltaY)
+    focus = focus - Position(Meter(deltaX / zooooom), Meter(deltaY / zooooom))
     rescale()
   }
 
   private def rescale(): Unit = {
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.translate(canvas.width / 2 + focus.x, canvas.height / 2 + focus.y)
-    ctx.scale(zoom, zoom)
     if (!animationRunning) {
       dom.window.requestAnimationFrame(draw)
     }
