@@ -171,7 +171,7 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     drawMesh()
     drawSun()
     drawEarth()
-    drawEarthTrail()
+//    drawEarthTrail()
 
     if (animationRunning) {
       calculateStep()
