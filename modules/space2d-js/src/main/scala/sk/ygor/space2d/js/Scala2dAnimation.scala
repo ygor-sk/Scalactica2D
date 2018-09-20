@@ -90,13 +90,15 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     }
 
     def drawEarthTrail(): Unit = {
-      ctx.fillStyle = "red"
+      ctx.strokeStyle = "red"
+      ctx.beginPath()
       var trailIdx = 0
       while (trailIdx < trail.length) {
         val position = trail(trailIdx)
         if (position != null) {
           val trailCanvasPosition = toPixelPosition(position)
           ctx.rect(trailCanvasPosition.x, trailCanvasPosition.y, 1, 1)
+          ctx.stroke()
         }
         trailIdx += 1
       }
