@@ -5,9 +5,29 @@ import org.scalajs.dom
 import org.scalajs.dom.raw._
 
 import scala.scalajs.js.annotation.JSExport
+import upickle.default._
+import upickle.Js
+import autowire._
+import sk.ygor.space2d.shared.{Elements, MyApi}
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.concurrent.Future
 
 @JSExport("Scala2dJavascript")
 object Scala2dJavascript {
+
+  object Client extends autowire.Client[Js.Value, Reader, Writer]{
+    override def doCall(req: Request): Future[Js.Value] = {
+      dom.ext.Ajax.post(
+        url = "/api/" + req.path.mkString("."),
+        data = upickle.json.write(Js.Obj(req.args.toSeq:_*))
+      ).map(_.responseText)
+        .map(upickle.json.read)
+    }
+
+    def read[Result: Reader](p: Js.Value): Result = readJs[Result](p)
+    def write[Result: Writer](r: Result): Js.Value = writeJs(r)
+  }
 
   case class DragStatus(x: Double, y: Double, isOut: Boolean)
 
@@ -17,6 +37,13 @@ object Scala2dJavascript {
   def main(): Unit = {
     $(() => {
       dom.console.log("Space2d loading")
+
+
+      $(Elements.dummy.idSelector).click(() => {
+        Client[MyApi].plus(5,6).call().onComplete(result => dom.console.log(result.toString))
+      })
+
+
 
       // prepare canvas and it's animation
       val canvas = dom.document.getElementById("space2dCanvas").asInstanceOf[HTMLCanvasElement]
@@ -148,14 +175,8 @@ object Scala2dJavascript {
     animation.resizeTo($(canvas).width(), $(canvas).height())
   }
 
-  case class Element(name: String) extends AnyVal {
-    def idSelector = s"#$name"
 
-    override def toString: String = name
-  }
 
-  object Elements {
-    val toggleAnimation = Element("toggleAnimation")
-  }
+
 
 }

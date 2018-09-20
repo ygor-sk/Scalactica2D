@@ -1,3 +1,4 @@
-GET        /                    sk.ygor.space2d.web.controller.ApplicationController.index
+GET         /                    sk.ygor.space2d.web.controller.ApplicationController.index
+POST        /api/:path           sk.ygor.space2d.web.controller.ApplicationController.api(path)
 
-GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
