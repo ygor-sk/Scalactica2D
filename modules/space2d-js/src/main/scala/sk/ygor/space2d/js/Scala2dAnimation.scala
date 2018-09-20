@@ -3,6 +3,7 @@ package sk.ygor.space2d.js
 import org.scalajs.dom
 import org.scalajs.dom.CanvasRenderingContext2D
 import org.scalajs.dom.raw.HTMLCanvasElement
+import sk.ygor.space2d.`macro`.DebugMacro
 import sk.ygor.space2d.js.units._
 
 class Scala2dAnimation(canvas: HTMLCanvasElement) {
@@ -71,9 +72,93 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   private def pixelToMeters(d: Double): Meter = Meter((d * zoom.canvasZoom) / PIXEL_PER_METER)
 
 
-  private def focuuuus: Position = focus
+  private def focuuuus: Position = planet.position
 
   private def draw(time: Double): Unit = {
+
+    def drawEarth(): Unit = {
+      val planetCanvasPosition = toPixelPosition(planet.position)
+
+      ctx.strokeStyle = "white"
+      ctx.lineWidth = 1
+      ctx.fillStyle = "grey"
+
+      ctx.beginPath()
+      ctx.arc(planetCanvasPosition.x, planetCanvasPosition.y, meterToPixels(planet.radius), 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.fill()
+    }
+
+    def drawEarthTrail(): Unit = {
+      ctx.fillStyle = "red"
+      var trailIdx = 0
+      while (trailIdx < trail.length) {
+        val position = trail(trailIdx)
+        if (position != null) {
+          val trailCanvasPosition = toPixelPosition(position)
+          ctx.rect(trailCanvasPosition.x, trailCanvasPosition.y, 1, 1)
+        }
+        trailIdx += 1
+      }
+    }
+
+    def drawSun(): Unit = {
+      val sunCanvasPosition = toPixelPosition(sun.position)
+      ctx.fillStyle = "yellow"
+      ctx.beginPath()
+      ctx.arc(sunCanvasPosition.x, sunCanvasPosition.y, meterToPixels(Meter(50)), 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.fillStyle = "red"
+      ctx.beginPath()
+      val canvasMeter = meterToPixels(Meter(1))
+      ctx.rect(sunCanvasPosition.x - canvasMeter / 2, sunCanvasPosition.y - canvasMeter / 2, canvasMeter, canvasMeter)
+      ctx.fill()
+    }
+
+    def drawMesh(): Unit = {
+      ctx.strokeStyle = "rgb(128,128,128)"
+
+      // TODO: move to rescale
+      // TODO: optimize
+      val meshMeters = Meter(zoom.mainLevel)
+      val meshOffset = focuuuus - Position(focuuuus.x % meshMeters, focuuuus.y % meshMeters)
+      val meshPixels = meterToPixels(meshMeters)
+      val meshCountX = (canvas.width / meshPixels / 2).toInt + 1
+      val meshCountY = (canvas.height / meshPixels / 2).toInt + 1
+      val meshOffsetPixels = toPixelPosition(meshOffset)
+
+      dom.console.log(DebugMacro.debugParameters("Mesh", meshMeters, meshOffset, meshPixels, meshCountX, meshCountY, meshOffsetPixels))
+
+      for (x <- 0 to meshCountX) {
+        ctx.beginPath()
+        val dx = (meshOffsetPixels.x + x * meshPixels).toInt
+        ctx.moveTo(dx, 0)
+        ctx.lineTo(dx, canvas.height)
+        if (x > 0) {
+          val dx2 = (meshOffsetPixels.x - x * meshPixels).toInt
+          ctx.moveTo(dx2, 0)
+          ctx.lineTo(dx2, canvas.height)
+        }
+        ctx.closePath()
+        ctx.stroke()
+      }
+
+      for (y <- 0 to meshCountY) {
+        ctx.beginPath()
+        val dy = (meshOffsetPixels.y + y * meshPixels).toInt
+        ctx.moveTo(0, dy)
+        ctx.lineTo(canvas.width, dy)
+        if (y > 0) {
+          val dy2 = (meshOffsetPixels.y - y * meshPixels).toInt
+          ctx.moveTo(0, dy2)
+          ctx.lineTo(canvas.width, dy2)
+        }
+        ctx.closePath()
+        ctx.stroke()
+      }
+    }
+
     if (framesDrawn == 0) {
       firstFrameDrawn = time
     }
@@ -81,79 +166,10 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // sun
-    val sunCanvasPosition = toPixelPosition(sun.position)
-    ctx.fillStyle = "yellow"
-    ctx.beginPath()
-    ctx.arc(sunCanvasPosition.x, sunCanvasPosition.y, meterToPixels(Meter(50)), 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = "red"
-    ctx.beginPath()
-    val canvasMeter = meterToPixels(Meter(1))
-    ctx.rect(sunCanvasPosition.x - canvasMeter / 2, sunCanvasPosition.y - canvasMeter / 2, canvasMeter, canvasMeter)
-    ctx.fill()
-
-    // earth
-    val planetCanvasPosition = toPixelPosition(planet.position)
-
-    ctx.strokeStyle = "white"
-    ctx.lineWidth = 1
-    ctx.fillStyle = "grey"
-
-    ctx.beginPath()
-    ctx.arc(planetCanvasPosition.x, planetCanvasPosition.y, meterToPixels(planet.radius), 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.fill()
-
-    // trail
-    ctx.fillStyle = "red"
-    var trailIdx = 0
-    while (trailIdx < trail.length) {
-      val position = trail(trailIdx)
-      if (position != null) {
-        val trailCanvasPosition = toPixelPosition(position)
-      }
-      trailIdx += 1
-    }
-
-    // mesh
-    ctx.strokeStyle = "grey"
-
-    // TODO: move to rescale
-    // TODO: optimize
-    val meshMeters = Meter(zoom.mainLevel)
-    val meshOffset = focuuuus - Position(focuuuus.x % meshMeters, focuuuus.y % meshMeters)
-    val meshPixels = meterToPixels(meshMeters)
-    val meshCountX = (canvas.width / meshPixels / 2).toInt
-    val meshCountY = (canvas.height / meshPixels / 2).toInt
-    val meshOffsetPixels = toPixelPosition(meshOffset)
-
-
-
-    ctx.save()
-    for (x <- 0 to meshCountX) {
-      ctx.setLineDash(scala.scalajs.js.Array(1.0, x * 10))
-      ctx.moveTo(meshOffsetPixels.x + x * meshPixels, 0)
-      ctx.lineTo(meshOffsetPixels.x + x * meshPixels, canvas.height)
-      if (x > 0) {
-        ctx.moveTo(meshOffsetPixels.x - x * meshPixels, 0)
-        ctx.lineTo(meshOffsetPixels.x - x * meshPixels, canvas.height)
-      }
-      ctx.stroke()
-    }
-
-    for (y <- 0 to meshCountY) {
-      ctx.setLineDash(scala.scalajs.js.Array(1.0, y * 10))
-      ctx.moveTo(0, meshOffsetPixels.y + y * meshPixels)
-      ctx.lineTo(canvas.width, meshOffsetPixels.y + y * meshPixels)
-      if (y > 0) {
-        ctx.moveTo(0, meshOffsetPixels.y - y * meshPixels)
-        ctx.lineTo(canvas.width, meshOffsetPixels.y - y * meshPixels)
-      }
-      ctx.stroke()
-    }
-    ctx.restore()
+    drawMesh()
+    drawSun()
+    drawEarth()
+    drawEarthTrail()
 
     if (animationRunning) {
       calculateStep()

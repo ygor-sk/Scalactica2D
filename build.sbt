@@ -5,7 +5,8 @@ lazy val root = (project in file("."))
   )
   .aggregate(
     space2dJs,
-    space2dWeb
+    space2dWeb,
+    space2dMacro,
   )
 
 lazy val space2dWeb = (project in file("modules/space2d-web"))
@@ -27,6 +28,13 @@ lazy val space2dJs = (project in file("modules/space2d-js"))
     commonSettings,
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.5",
     libraryDependencies += "org.querki" %%% "jquery-facade" % "1.2",
+  )
+  .dependsOn(space2dMacro)
+
+lazy val space2dMacro = (project in file("modules/space2d-macro"))
+  .settings(
+    name := "space2d-macro",
+    commonSettings,
   )
 
 lazy val commonSettings = Seq(
