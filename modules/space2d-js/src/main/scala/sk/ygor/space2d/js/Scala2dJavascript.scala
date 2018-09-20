@@ -2,7 +2,7 @@ package sk.ygor.space2d.js
 
 import org.querki.jquery._
 import org.scalajs.dom
-import org.scalajs.dom.raw.{Event, HTMLCanvasElement, MouseEvent, WheelEvent}
+import org.scalajs.dom.raw._
 
 import scala.scalajs.js.annotation.JSExport
 
@@ -40,6 +40,7 @@ object Scala2dJavascript {
 
 
       canvas.onmousewheel = onWheel(animation)
+      dom.window.onkeydown = onKeyDown(animation)
 
       canvas.onmousedown = (e: MouseEvent) => {
         // if (e.ctrlKey) {
@@ -97,6 +98,36 @@ object Scala2dJavascript {
   private def onWheel(animation: Scala2dAnimation)(event: WheelEvent): Boolean = {
     animation.zoomBy(event.deltaY)
     false
+  }
+
+  private def onKeyDown(animation: Scala2dAnimation)(event: KeyboardEvent): Boolean = {
+    event.key match {
+      case "+" =>
+        animation.zoomBy(-100)
+        false
+      case "-" =>
+        animation.zoomBy(+100)
+        false
+      case "ArrowRight" =>
+        animation.dragBy(-100, 0)
+        false
+      case "ArrowLeft" =>
+        animation.dragBy(100, 0)
+        false
+      case "ArrowUp" =>
+        animation.dragBy(0, 100)
+        false
+      case "ArrowDown" =>
+        animation.dragBy(0, -100)
+        false
+      case "s" | "S" =>
+        onToggleAnimation(animation)
+        false
+      case _ =>
+        dom.console.log(event.keyCode)
+        dom.console.log(event.key)
+        true
+    }
   }
 
   private def onToggleAnimation(animation: Scala2dAnimation): Any = {

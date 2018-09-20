@@ -7,14 +7,15 @@ import sk.ygor.space2d.js.units._
 
 class Scala2dAnimation(canvas: HTMLCanvasElement) {
 
-  val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-  val radius = 150
+  private val PIXEL_PER_METER: Int = 1000
+
+  private val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
   private var animationRunning: Boolean = false
   private var lastAnimationRequestId: Int = 0
 
   private var focus = Position(Meter(0), Meter(0))
-  private var zoom: Int = 10
+  private var zoom: Zoom = Zoom(27)
 
   private var framesDrawn: Int = 0
   private var firstFrameDrawn: Double = 0d
@@ -43,18 +44,32 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     2500
   )
 
-  case class CanvasPosition(x: Double, y: Double)
+  case class PixelPosition(x: Double, y: Double)
 
   case class Planet(position: Position, radius: Meter, speed: Speed)
 
   case class PlanetDerivative(speed: Speed, acceleration: Acceleration)
 
-  private def toCanvasPosition(position: Position): CanvasPosition = CanvasPosition(
-    toCanvasDistance(position.x - focuuuus.x) + (canvas.width / 2),
-    toCanvasDistance(position.y - focuuuus.y) + (canvas.height / 2)
+  case class Zoom(level: Int) {
+
+    val mainLevel: Int = Math.pow(10, level / 9).toInt
+    val subLevel: Int = (level % 9) + 1
+
+    /**
+      * 1, 2, 3, .., 9, 10, 20, 30, ..., 90, 100, 200, 300, ..., 900, ...
+      */
+    val canvasZoom: Int = mainLevel * subLevel
+  }
+
+  private def toPixelPosition(position: Position): PixelPosition = PixelPosition(
+    meterToPixels(position.x - focuuuus.x) + (canvas.width / 2),
+    meterToPixels(position.y - focuuuus.y) + (canvas.height / 2)
   )
 
-  private def toCanvasDistance(m: Meter): Double = m.value * zooooom
+  private def meterToPixels(m: Meter): Double = (m.value * PIXEL_PER_METER) / zoom.canvasZoom
+
+  private def pixelToMeters(d: Double): Meter = Meter((d * zoom.canvasZoom) / PIXEL_PER_METER)
+
 
   private def focuuuus: Position = focus
 
@@ -67,35 +82,78 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // sun
-    val sunCanvasPosition = toCanvasPosition(Position(Meter(0), Meter(0)))
+    val sunCanvasPosition = toPixelPosition(sun.position)
     ctx.fillStyle = "yellow"
     ctx.beginPath()
-    ctx.arc(sunCanvasPosition.x, sunCanvasPosition.y, toCanvasDistance(Meter(50)), 0, Math.PI * 2)
+    ctx.arc(sunCanvasPosition.x, sunCanvasPosition.y, meterToPixels(Meter(50)), 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = "red"
+    ctx.beginPath()
+    val canvasMeter = meterToPixels(Meter(1))
+    ctx.rect(sunCanvasPosition.x - canvasMeter / 2, sunCanvasPosition.y - canvasMeter / 2, canvasMeter, canvasMeter)
     ctx.fill()
 
     // earth
-    val planetCanvasPosition = toCanvasPosition(planet.position)
+    val planetCanvasPosition = toPixelPosition(planet.position)
 
     ctx.strokeStyle = "white"
     ctx.lineWidth = 1
     ctx.fillStyle = "grey"
 
     ctx.beginPath()
-    ctx.arc(planetCanvasPosition.x, planetCanvasPosition.y, toCanvasDistance(planet.radius), 0, Math.PI * 2)
+    ctx.arc(planetCanvasPosition.x, planetCanvasPosition.y, meterToPixels(planet.radius), 0, Math.PI * 2)
     ctx.stroke()
     ctx.fill()
 
+    // trail
     ctx.fillStyle = "red"
-    trail.foreach(position =>
+    var trailIdx = 0
+    while (trailIdx < trail.length) {
+      val position = trail(trailIdx)
       if (position != null) {
-        val trailCanvasPosition = toCanvasPosition(position)
-        ctx.fillRect(trailCanvasPosition.x, trailCanvasPosition.y, 1, 1)
+        val trailCanvasPosition = toPixelPosition(position)
       }
-    )
+      trailIdx += 1
+    }
 
-    //     draw mesh
-    //    val meshSize = ((1 - (zoom % 1)) * 10).toInt
-    //    for (int x =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 )
+    // mesh
+    ctx.strokeStyle = "grey"
+
+    // TODO: move to rescale
+    // TODO: optimize
+    val meshMeters = Meter(zoom.mainLevel)
+    val meshOffset = focuuuus - Position(focuuuus.x % meshMeters, focuuuus.y % meshMeters)
+    val meshPixels = meterToPixels(meshMeters)
+    val meshCountX = (canvas.width / meshPixels / 2).toInt
+    val meshCountY = (canvas.height / meshPixels / 2).toInt
+    val meshOffsetPixels = toPixelPosition(meshOffset)
+
+
+
+    ctx.save()
+    for (x <- 0 to meshCountX) {
+      ctx.setLineDash(scala.scalajs.js.Array(1.0, x * 10))
+      ctx.moveTo(meshOffsetPixels.x + x * meshPixels, 0)
+      ctx.lineTo(meshOffsetPixels.x + x * meshPixels, canvas.height)
+      if (x > 0) {
+        ctx.moveTo(meshOffsetPixels.x - x * meshPixels, 0)
+        ctx.lineTo(meshOffsetPixels.x - x * meshPixels, canvas.height)
+      }
+      ctx.stroke()
+    }
+
+    for (y <- 0 to meshCountY) {
+      ctx.setLineDash(scala.scalajs.js.Array(1.0, y * 10))
+      ctx.moveTo(0, meshOffsetPixels.y + y * meshPixels)
+      ctx.lineTo(canvas.width, meshOffsetPixels.y + y * meshPixels)
+      if (y > 0) {
+        ctx.moveTo(0, meshOffsetPixels.y - y * meshPixels)
+        ctx.lineTo(canvas.width, meshOffsetPixels.y - y * meshPixels)
+      }
+      ctx.stroke()
+    }
+    ctx.restore()
 
     if (animationRunning) {
       calculateStep()
@@ -111,9 +169,9 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     val precision = 10
     var cycle = precision
     while (cycle > 0) {
-//      planet = nextUsingEuler(planet, precision)
-            planet = nextUsingRangeKutta(planet, precision)
-//                  planet = nextUsingMidpoint(planet, precision)
+      //      planet = nextUsingEuler(planet, precision)
+      planet = nextUsingRangeKutta(planet, precision)
+      //                  planet = nextUsingMidpoint(planet, precision)
       cycle -= 1
     }
     trail(trailIdx) = planet.position
@@ -130,35 +188,35 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
     planet.copy(position = positionNew, speed = speedNew)
   }
 
-    def nextUsingMidpoint(planet: Planet, precision: Double): Planet = {
-      val positionMid = planet.position + ((planet.speed / precision) / 2)
-      val accelerationMid = acceleration(sun.position, positionMid)
-      val speedNew = planet.speed + (accelerationMid / precision)
-      val positionNew = planet.position + (((planet.speed + speedNew) / 2) / precision)
-      planet.copy(position = positionNew, speed = speedNew)
+  def nextUsingMidpoint(planet: Planet, precision: Double): Planet = {
+    val positionMid = planet.position + ((planet.speed / precision) / 2)
+    val accelerationMid = acceleration(sun.position, positionMid)
+    val speedNew = planet.speed + (accelerationMid / precision)
+    val positionNew = planet.position + (((planet.speed + speedNew) / 2) / precision)
+    planet.copy(position = positionNew, speed = speedNew)
+  }
+
+  def nextUsingRangeKutta(planet: Planet, precision: Double): Planet = {
+
+    def firstDerivative: PlanetDerivative =
+      PlanetDerivative(planet.speed, acceleration(sun.position, planet.position))
+
+    def nextDerivative(derivative: PlanetDerivative, step: Double): PlanetDerivative = {
+      val newPosition = planet.position + derivative.speed * (step / precision)
+      val newSpeed = planet.speed + derivative.acceleration * (step / precision)
+      val newAcceleration = acceleration(sun.position, newPosition)
+      PlanetDerivative(newSpeed, newAcceleration)
     }
 
-    def nextUsingRangeKutta(planet: Planet, precision: Double): Planet = {
-
-      def firstDerivative: PlanetDerivative =
-        PlanetDerivative(planet.speed, acceleration(sun.position, planet.position))
-
-      def nextDerivative(derivative: PlanetDerivative, step: Double): PlanetDerivative = {
-        val newPosition = planet.position + derivative.speed * (step / precision)
-        val newSpeed = planet.speed + derivative.acceleration * (step / precision)
-        val newAcceleration = acceleration(sun.position, newPosition)
-        PlanetDerivative(newSpeed, newAcceleration)
-      }
-
-      val a = firstDerivative
-      val b = nextDerivative(a, 0.5)
-      val c = nextDerivative(b, 0.5)
-      val d = nextDerivative(c, 1)
-      planet.copy(
-        position = planet.position + ((a.speed + (b.speed + c.speed) * 2 + d.speed) / 6) / precision,
-        speed = planet.speed + ((a.acceleration + (b.acceleration + c.acceleration) * 2 + d.acceleration) / 6) / precision
-      )
-    }
+    val a = firstDerivative
+    val b = nextDerivative(a, 0.5)
+    val c = nextDerivative(b, 0.5)
+    val d = nextDerivative(c, 1)
+    planet.copy(
+      position = planet.position + ((a.speed + (b.speed + c.speed) * 2 + d.speed) / 6) / precision,
+      speed = planet.speed + ((a.acceleration + (b.acceleration + c.acceleration) * 2 + d.acceleration) / 6) / precision
+    )
+  }
 
   def acceleration(centerPosition: Position, orbitingPosition: Position): Acceleration = {
     val relativePosition = orbitingPosition - centerPosition
@@ -193,23 +251,10 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   }
 
   def zoomBy(wheelDelta: Double): Unit = {
-    val zoomDelta = (-wheelDelta / 100).toInt
-    zoom = Math.max(zoom + zoomDelta, 0)
+    val zoomDelta = (wheelDelta / 100).toInt
+    zoom = Zoom(Math.max(zoom.level + zoomDelta, 0))
     dom.console.log(s"zoom set to: $zoom")
     rescale()
-  }
-
-  /**
-    * @return 1, 2, 3, .., 9, 10, 20, 30, ..., 90, 100, 200, 300, ..., 900, ...
-    */
-  private def zooooom: Double = {
-    val a = zoom / 9
-    val b = zoom % 9
-    val result = Math.pow(10, a) * (b + 1)
-    //    val result = 1 / Math.log10(zoom)
-    dom.console.log(s"zoom=$zoom, a=$a, b=$b, result=$result")
-    result
-
   }
 
   def isAnimationRunning: Boolean = animationRunning
@@ -222,7 +267,7 @@ class Scala2dAnimation(canvas: HTMLCanvasElement) {
   }
 
   def dragBy(deltaX: Double, deltaY: Double): Unit = {
-    focus = focus - Position(Meter(deltaX / zooooom), Meter(deltaY / zooooom))
+    focus = focus - Position(pixelToMeters(deltaX), pixelToMeters(deltaY))
     rescale()
   }
 
