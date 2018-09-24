@@ -17,6 +17,7 @@
             .right {
                 background: #2aabd2;
             }
+
             #space2dCanvas {
                 background: black;
             }
@@ -43,6 +44,10 @@
             #space2dCanvas {
                 height: 100%;
             }
+
+            .prototype {
+                display: none;
+            }
     </style>
 
     <div class="main-wrapper">
@@ -51,8 +56,18 @@
                 <h4>Top left</h4>
                 <button id="@Elements.toggleAnimation">Start</button>
                 <button id="@Elements.dummy">Dummy</button>
+
+                <h4>Space Objects</h4>
+                <ul id="spaceObjects">
+                    <li class="prototype"><a href="#">Prototype</a></li>
+                </ul>
             </div>
-            <div class="half"><h4>Bottom left</h4></div>
+            <div class="half">
+                <h4>Scenarios</h4>
+                <ul id="scenarios">
+                    <li class="prototype"><a href="#">Prototype</a></li>
+                </ul>
+            </div>
         </div>
         <div class="section right col-xs-9">
             <canvas id="space2dCanvas" tabindex="1"></canvas>
@@ -60,6 +75,6 @@
     </div>
 
     <script>
-            Scala2dJavascript().main();
+            Space2dJavascriptApplication.run();
     </script>
 }

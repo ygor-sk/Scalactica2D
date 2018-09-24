@@ -7,7 +7,7 @@ import sk.ygor.space2d.web.view
 import upickle.Js
 import upickle.default._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class ApplicationController(controllerComponents: ControllerComponents)

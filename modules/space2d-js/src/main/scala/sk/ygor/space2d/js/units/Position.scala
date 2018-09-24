@@ -10,6 +10,8 @@ case class Position(x: Meter, y: Meter) {
 
   def +(speed: Speed) = Position(x + Meter(speed.x.value), y + Meter(speed.y.value))
 
+}
 
-
+object Position {
+  def zero: Position = Position(Meter(0), Meter(0))
 }
