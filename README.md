@@ -1,6 +1,6 @@
-# space2d
+# Scalactica 2D
 
-Space2d is a simulator of motion of objects in 2D space. It aims to be an interactive educatory tutorial.
+Scalactica 2Dd is a simulator of motion of objects in 2D space. It aims to be an interactive educatory tutorial.
 Following features are planned:
 - Newton's laws (uniform motion, immediate forces)
 - simple drag
