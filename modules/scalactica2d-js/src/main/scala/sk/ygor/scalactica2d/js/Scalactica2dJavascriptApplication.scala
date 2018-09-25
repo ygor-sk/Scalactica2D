@@ -11,7 +11,7 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 object Scalactica2dJavascriptApplication {
 
   @JSExport
-  def run(): Unit = {
+  def main(): Unit = {
     val components = new Scalactica2dJavascriptComponents {
       override def canvas: HTMLCanvasElement =
         dom.document.getElementById("scalactica2dCanvas").asInstanceOf[HTMLCanvasElement]

@@ -10,11 +10,11 @@ import router.Routes
 
 class Scalactica2dApplicationLoader extends ApplicationLoader {
   override def load(context: Context): Application = {
-    new Scalactica2DComponents(context).application
+    new Scalactica2dComponents(context).application
   }
 }
 
-class Scalactica2DComponents(context: Context) extends BuiltInComponentsFromContext(context)
+class Scalactica2dComponents(context: Context) extends BuiltInComponentsFromContext(context)
   //  with HttpFiltersComponents
   with AssetsComponents
   with Scalactica2dWebComponents {
