@@ -9,6 +9,8 @@ trait Scalactica2dWebComponents {
 
   def controllerComponents: ControllerComponents
 
+  implicit def environment: play.api.Environment
+
   implicit def assetsFinder: AssetsFinder
 
   lazy val applicationController: ApplicationController = wire[ApplicationController]

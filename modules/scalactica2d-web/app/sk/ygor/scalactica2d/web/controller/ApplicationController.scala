@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 
 
 class ApplicationController(controllerComponents: ControllerComponents)
-                           (implicit assetsFinder: AssetsFinder)
+                           (implicit assetsFinder: AssetsFinder, environment: play.api.Environment)
   extends AbstractController(controllerComponents) {
 
   def index = Action {

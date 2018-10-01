@@ -4,7 +4,8 @@
         content: Html
 )(
         implicit
-        assetsFinder: AssetsFinder
+        assetsFinder: AssetsFinder,
+        environment: play.api.Environment
 )
 
 <!DOCTYPE html>
@@ -16,7 +17,12 @@
         <link rel="stylesheet" media="screen" href="@assetsFinder.path("bootstrap3/css/bootstrap.min.css")">
         <script type="text/javascript" src="@assetsFinder.path("jquery/js/jquery-3.3.1.min.js")"></script>
         <script type="text/javascript" src="@assetsFinder.path("bootstrap3/js/bootstrap.min.js")"></script>
-        <script type="text/javascript" src="@assetsFinder.path("scalactica2d-js-fastopt.js")"></script>
+        @*TODO: automatic resolving of script name*@
+        @if(environment.asJava.isDev) {
+            <script type="text/javascript" src="@assetsFinder.path("scalactica2d-js-fastopt.js")"></script>
+        } else {
+            <script type="text/javascript" src="@assetsFinder.path("scalactica2d-js-opt.js")"></script>
+        }
     </head>
     <body>
     @content
