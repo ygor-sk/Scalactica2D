@@ -1,5 +1,8 @@
 # Scalactica 2D
 
+[Deployed at Heroku](https://scalactica2d.herokuapp.com/)
+
+
 Scalactica 2Dd is a simulator of motion of objects in 2D space. It aims to be an interactive educatory tutorial.
 Following features are planned:
 - Newton's laws (uniform motion, immediate forces)
