@@ -12,8 +12,6 @@ import sk.ygor.scalactica2d.js.units._
 import sk.ygor.scalactica2d.js.util.SpaceObjectTree
 import sk.ygor.scalactica2d.shared.{Elements, MyApi}
 
-import scala.util.Try
-
 class UserInterface(canvas: HTMLCanvasElement,
                     scenarioListService: ScenarioListService,
                     ajaxClient: AjaxClient,
@@ -189,14 +187,6 @@ class UserInterface(canvas: HTMLCanvasElement,
     }
 
     rescale()
-  }
-
-  def changeSpeedOfFocusedObject(spaceObject: SpaceObject, deltaX: Double, deltaY: Double): Unit = {
-    spaceObject match {
-      case movingObject: MovingObject =>
-        movingObject.speed = movingObject.speed + Speed(MeterPerSecond(deltaX), MeterPerSecond(deltaY))
-      case _ => throw new Exception("Unexpected object type: " + spaceObject.name)
-    }
   }
 
   def loadScenario(scenario: Scenario): Unit = {
@@ -468,18 +458,43 @@ class UserInterface(canvas: HTMLCanvasElement,
 
   def setAvailableControls(spaceObject: SpaceObject): Unit = {
     val speedDeltaElement = $(Elements.objectControlSpeedDelta.idSelector).hide()
-    if (spaceObject.isInstanceOf[Speck]) {
-      speedDeltaElement.show()
-      val executeButton = speedDeltaElement.find(".execute")
-      val horizontalInput = speedDeltaElement.find(".horizontal")
-      val verticalInput = speedDeltaElement.find(".vertical")
-      executeButton.off("click").click(() => {
-        for (deltaX <- Try(horizontalInput.valueString.toDouble);
-             deltaY <- Try(verticalInput.valueString.toDouble)) {
-          changeSpeedOfFocusedObject(spaceObject, deltaX, deltaY)
+    Seq(spaceObject).collect {
+      case speck: Speck => {
+        speedDeltaElement.show()
+        speedDeltaElement.find("button").off("click")
+
+        // TODO: remember last value
+        var level = 1
+
+        def calculateSpeedDeltaFactor: Double = {
+          val mainLevel: Int = Math.pow(10, level / 9).toInt
+          val subLevel: Int = (level % 9) + 1
+          mainLevel * subLevel
         }
-      })
+
+        def stepDeltaClick(levelDelta: Int): Unit = {
+          if (level + levelDelta >= 1) {
+            level += levelDelta
+          }
+          speedDeltaElement.find(".stepSize").value(calculateSpeedDeltaFactor.toString)
+        }
+
+        speedDeltaElement.find(".minusStep").click(() => stepDeltaClick(-1))
+        speedDeltaElement.find(".plusStep").click(() => stepDeltaClick(1))
+
+        def applySpeedChange(x: Int, y: Int): Unit = {
+          speck.speed = speck.speed + Speed(MeterPerSecond(x * calculateSpeedDeltaFactor), MeterPerSecond(y * calculateSpeedDeltaFactor))
+        }
+
+        speedDeltaElement.find(".minusX").click(() => applySpeedChange(-1, 0))
+        speedDeltaElement.find(".plusX").click(() => applySpeedChange(1, 0))
+        speedDeltaElement.find(".minusY").click(() => applySpeedChange(0, -1))
+        speedDeltaElement.find(".plusY").click(() => applySpeedChange(0, 1))
+
+        speedDeltaElement.find(".stop").click(() => speck.speed = Speed.zero)
+      }
     }
+
   }
 
   private def onToggleAnimation(): Any = {

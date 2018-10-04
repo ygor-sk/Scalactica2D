@@ -104,7 +104,7 @@ object ScenarioSimulator {
 
   trait EventListener {
 
-    @deprecated // TODO: this does not belong here - it's just a quick dirty solution
+    // TODO: this does not belong here - it's just a quick dirty solution
     def focusedObjectChanged(spaceObject: SpaceObject): Unit
 
     def objectPositionChanged(spaceObject: SpaceObject): Unit

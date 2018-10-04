@@ -21,5 +21,9 @@ case class Speed(x: MeterPerSecond, y: MeterPerSecond) {
     x + MeterPerSecond(acceleration.x.value),
     y + MeterPerSecond(acceleration.y.value)
   )
+  
+}
 
+object Speed {
+  val zero: Speed = Speed(MeterPerSecond(0), MeterPerSecond(0))
 }
