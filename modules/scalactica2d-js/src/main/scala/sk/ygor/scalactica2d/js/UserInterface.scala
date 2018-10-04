@@ -2,11 +2,10 @@ package sk.ygor.scalactica2d.js
 
 import org.querki.jquery._
 import org.scalajs.dom
-import org.scalajs.dom.{Position => _, _}
 import org.scalajs.dom.raw.HTMLCanvasElement
+import org.scalajs.dom.{Position => _, _}
 import sk.ygor.scalactica2d.js.animation.{PixelPosition, PositionConverter}
-import sk.ygor.scalactica2d.js.objects.{Marker, MovingObject, SpaceObject}
-import sk.ygor.scalactica2d.js.scenario.ScenarioSimulator.EventListener
+import sk.ygor.scalactica2d.js.objects.{Marker, MovingObject, SpaceObject, Speck}
 import sk.ygor.scalactica2d.js.scenario._
 import sk.ygor.scalactica2d.js.scenario.predefined.FirstScenario
 import sk.ygor.scalactica2d.js.units._
@@ -21,6 +20,7 @@ class UserInterface(canvas: HTMLCanvasElement,
                     scenarioSimulatorFactory: ScenarioSimulatorFactory) extends PositionConverter {
 
   private val ctx: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
+  private val scenarioSimulatorListener: ScenarioSimulator.EventListener = createScenarioSimulationListener()
 
   private val PIXEL_PER_METER: Int = 1000
   private val centerMarker = Marker("[0,0]", Position.zero)
@@ -134,7 +134,6 @@ class UserInterface(canvas: HTMLCanvasElement,
     }
   }
 
-
   private def requestAnimationFrame(): Unit = {
     lastAnimationRequestId = dom.window.requestAnimationFrame(draw)
   }
@@ -181,10 +180,14 @@ class UserInterface(canvas: HTMLCanvasElement,
   def setFocusedSpaceObject(spaceObject: SpaceObject): Unit = {
     focusedSpaceObject = spaceObject
     focusOffset = Position.zero
-    //    dom.console.log(DebugParameters(spaceObject.availableControls))
-    //    dom.console.log(DebugParameters(spaceObject.name))
-    //    dom.console.log(DebugParameters(spaceObject.availableControls.speedDelta))
     setAvailableControls(spaceObject)
+
+    scenarioSimulatorListener.focusedObjectChanged(spaceObject)
+    scenarioSimulatorListener.objectPositionChanged(spaceObject)
+    Seq(spaceObject).collect {
+      case movingObject: MovingObject => scenarioSimulatorListener.objectSpeedChanged(movingObject)
+    }
+
     rescale()
   }
 
@@ -198,7 +201,17 @@ class UserInterface(canvas: HTMLCanvasElement,
 
   def loadScenario(scenario: Scenario): Unit = {
     dom.console.log(s"loading scenario: $scenario")
+    this.scenarioSimulator = scenarioSimulatorFactory(scenario, scenarioSimulatorListener)
 
+    setFocusedSpaceObject(centerMarker)
+    zoom = Zoom(27)
+    rescale()
+
+    renderObjectTree(SpaceObjectTree(centerMarker, Seq(scenarioSimulator.currentTree)))
+    renderMission(scenario.mission)
+  }
+
+  private def createScenarioSimulationListener(): ScenarioSimulator.EventListener = {
     val speedAccelerationElement = $(Elements.speedAcceleration.idSelector)
     val positionXSpan = speedAccelerationElement.find(".positionX")
     val positionYSpan = speedAccelerationElement.find(".positionY")
@@ -207,42 +220,40 @@ class UserInterface(canvas: HTMLCanvasElement,
     val accelerationXSpan = speedAccelerationElement.find(".accelerationX")
     val accelerationYSpan = speedAccelerationElement.find(".accelerationY")
 
-    this.scenarioSimulator = scenarioSimulatorFactory(scenario, new EventListener {
-
-      import java.text.DecimalFormat
-
-      val formatter = new DecimalFormat("#0.00")
+    new ScenarioSimulator.EventListener {
 
       // TODO: defer to next animation frame
 
+      override def focusedObjectChanged(spaceObject: SpaceObject): Unit = {
+        positionXSpan.html("-")
+        positionYSpan.html("-")
+        speedXSpan.html("-")
+        speedYSpan.html("-")
+        accelerationXSpan.html("-")
+        accelerationYSpan.html("-")
+      }
+
       override def objectPositionChanged(spaceObject: SpaceObject): Unit = {
         if (focusedSpaceObject eq spaceObject) {
-          positionXSpan.html(formatter.format(spaceObject.position.x))
-          positionYSpan.html(formatter.format(spaceObject.position.y))
+          positionXSpan.html(spaceObject.position.x.value.formatted("%.6f"))
+          positionYSpan.html(spaceObject.position.y.value.formatted("%.6f"))
         }
       }
 
       override def objectSpeedChanged(movingObject: MovingObject): Unit = {
         if (focusedSpaceObject eq movingObject) {
-          speedXSpan.html(formatter.format(movingObject.speed.x))
-          speedYSpan.html(formatter.format(movingObject.speed.y))
+          speedXSpan.html(movingObject.speed.x.value.formatted("%.6f"))
+          speedYSpan.html(movingObject.speed.y.value.formatted("%.6f"))
         }
       }
 
       override def objectAccelerationChanged(spaceObject: SpaceObject, acceleration: Acceleration): Unit = {
         if (focusedSpaceObject eq spaceObject) {
-          accelerationXSpan.html(acceleration.x.value.toString)
-          accelerationYSpan.html(acceleration.y.value.toString)
+          accelerationXSpan.html(acceleration.x.value.formatted("%.6f"))
+          accelerationYSpan.html(acceleration.y.value.formatted("%.6f"))
         }
       }
-    })
-
-    setFocusedSpaceObject(centerMarker)
-    zoom = Zoom(27)
-    rescale()
-
-    renderObjectTree(SpaceObjectTree(centerMarker, Seq(scenarioSimulator.currentTree)))
-    renderMission(scenario.mission)
+    }
   }
 
   private def rescale(): Unit = {
@@ -456,8 +467,8 @@ class UserInterface(canvas: HTMLCanvasElement,
 
 
   def setAvailableControls(spaceObject: SpaceObject): Unit = {
-    val speedDeltaElement = $(Elements.objectControlSpeedDelta.idSelector)
-    if (spaceObject.availableControls.speedDelta) {
+    val speedDeltaElement = $(Elements.objectControlSpeedDelta.idSelector).hide()
+    if (spaceObject.isInstanceOf[Speck]) {
       speedDeltaElement.show()
       val executeButton = speedDeltaElement.find(".execute")
       val horizontalInput = speedDeltaElement.find(".horizontal")
@@ -468,8 +479,6 @@ class UserInterface(canvas: HTMLCanvasElement,
           changeSpeedOfFocusedObject(spaceObject, deltaX, deltaY)
         }
       })
-    } else {
-      speedDeltaElement.hide()
     }
   }
 

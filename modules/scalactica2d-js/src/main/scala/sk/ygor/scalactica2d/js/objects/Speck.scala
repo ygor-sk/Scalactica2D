@@ -2,11 +2,10 @@ package sk.ygor.scalactica2d.js.objects
 
 import org.scalajs.dom.raw.CanvasRenderingContext2D
 import sk.ygor.scalactica2d.js.animation.PositionConverter
-import sk.ygor.scalactica2d.js.scenario.AvailableControls
 import sk.ygor.scalactica2d.js.units.{Meter, Position, Speed}
 
 case class Speck(var position: Position,
-            var speed: Speed) extends MovingObject {
+                 var speed: Speed) extends MovingObject {
 
   override def name: String = "Speck"
 
@@ -23,5 +22,4 @@ case class Speck(var position: Position,
     ctx.fill()
   }
 
-  override def availableControls: AvailableControls = AvailableControls(speedDelta = true)
 }

@@ -103,6 +103,10 @@ class ScenarioSimulator(scenario: Scenario, eventListener: ScenarioSimulator.Eve
 object ScenarioSimulator {
 
   trait EventListener {
+
+    @deprecated // TODO: this does not belong here - it's just a quick dirty solution
+    def focusedObjectChanged(spaceObject: SpaceObject): Unit
+
     def objectPositionChanged(spaceObject: SpaceObject): Unit
 
     def objectSpeedChanged(movingObject: MovingObject): Unit
