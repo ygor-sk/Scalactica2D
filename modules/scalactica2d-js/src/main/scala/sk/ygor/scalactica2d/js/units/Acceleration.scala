@@ -18,3 +18,7 @@ case class Acceleration(x: MeterPerSecondSquared, y: MeterPerSecondSquared) {
   )
 
 }
+
+object Acceleration {
+  val zero: Acceleration = Acceleration(MeterPerSecondSquared(0), MeterPerSecondSquared(0))
+}

@@ -4,7 +4,7 @@ import org.scalajs.dom.raw.CanvasRenderingContext2D
 import sk.ygor.scalactica2d.js.animation.PositionConverter
 import sk.ygor.scalactica2d.js.units.{Meter, Position, Speed}
 
-case class Sun(position: Position, radius: Meter, speed: Speed) extends CelestialObject {
+case class Sun(position: Position, radius: Meter, speed: Speed) extends SpaceObject {
 
   val name: String = "Sun"
 

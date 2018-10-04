@@ -1,0 +1,64 @@
+@import sk.ygor.scalactica2d.shared.Elements
+
+<style>
+                #speedAcceleration canvas {
+                    width: 100%;
+                    border: 1px dashed black;
+                }
+</style>
+
+<div id="@Elements.controlsTab" class="tab-pane fade in active" style="display: none">
+    <h4>Animation</h4>
+    <button id="@Elements.toggleAnimation">Start</button>
+    <button id="@Elements.dummy">Dummy</button>
+
+    <h4>Space object tree</h4>
+    <ul id="@Elements.spaceObjectTree">
+        <li class="prototype"><a href="#">Prototype</a></li>
+    </ul>
+
+    <h4>Speed / acceleration</h4>
+    <div class="row" id="@Elements.speedAcceleration">
+        <div class="col-xs-6">
+            Position X: <span class="positionX">-</span>
+            <br>
+            Position Y: <span class="positionY">-</span>
+            <br>
+            Speed X: <span class="speedX">-</span>
+            <br>
+            Speed Y: <span class="speedY">-</span>
+            <br>
+            Acceleration X: <span class="accelerationX">-</span>
+            <br>
+            Acceleration Y: <span class="accelerationY">-</span>
+        </div>
+        <div class="col-xs-6">
+            <canvas></canvas>
+        </div>
+    </div>
+
+
+    <h4>Object controls</h4>
+    <div id="@Elements.objectControlSpeedDelta">
+        Speed change
+        <label>
+            Horizontal (m/s)
+            <input class="horizontal" value="0.0">
+        </label>
+        <label>
+            Vertical (m/s)
+            <input class="vertical" value="0.0">
+        </label>
+        <button class="execute">Change</button>
+    </div>
+
+    <h4>Mission objectives</h4>
+    <div id="@Elements.mission">
+        <span class="current"></span>
+        <div class="advance">
+            <button class="nextStep">Next</button>
+            <span class="condition"></span>
+        </div>
+    </div>
+
+</div>

@@ -11,16 +11,9 @@
 
 
     <style>
-            .left {
-                background: grey;
-            }
-
-            .right {
-                background: #2aabd2;
-            }
-
             #scalactica2dCanvas {
                 background: black;
+                height: 100%;
             }
 
             .main-wrapper {
@@ -31,47 +24,30 @@
                 height: 100%;
                 display: flex;
                 flex-direction: column;
-                /*justify-content: center;*/
-                /*align-items: center;*/
-            }
-
-            .half {
-                background: #f9f9f9;
-                height: 50%;
-                width: 100%;
-                margin: 15px 0;
-            }
-
-            #scalactica2dCanvas {
-                height: 100%;
             }
 
             .prototype {
                 display: none;
             }
+
     </style>
 
     <div class="main-wrapper">
-        <div class="section left col-xs-3">
-            <div class="half">
-                <h4>Top left</h4>
-                <button id="@Elements.toggleAnimation">Start</button>
-                <button id="@Elements.dummy">Dummy</button>
+        <div class="section col-xs-3" style="overflow: auto">
+            <ul class="nav nav-tabs">
+                <li class="active"><a data-toggle="tab" href="@Elements.controlsTab.idSelector">Controls</a></li>
+                <li><a data-toggle="tab" href="#@Elements.scenariosTab.idSelector">Scenarios</a></li>
+                <li><a data-toggle="tab" href="#@Elements.savedStatesTab.idSelector">Saved states</a></li>
+            </ul>
 
-                <h4>Space Objects</h4>
-                <ul id="spaceObjects">
-                    <li class="prototype"><a href="#">Prototype</a></li>
-                </ul>
-            </div>
-            <div class="half">
-                <h4>Scenarios</h4>
-                <ul id="scenarios">
-                    <li class="prototype"><a href="#">Prototype</a></li>
-                </ul>
+            <div class="tab-content">
+                @sk.ygor.scalactica2d.web.view.tabs.html.controlsTab()
+                @sk.ygor.scalactica2d.web.view.tabs.html.scenariosTab()
+                @sk.ygor.scalactica2d.web.view.tabs.html.savedStatesTab()
             </div>
         </div>
-        <div class="section right col-xs-9">
-            <canvas id="scalactica2dCanvas" tabindex="1"></canvas>
+        <div class="section col-xs-9">
+            <canvas id="@Elements.scalactica2dCanvas" tabindex="1"></canvas>
         </div>
     </div>
 

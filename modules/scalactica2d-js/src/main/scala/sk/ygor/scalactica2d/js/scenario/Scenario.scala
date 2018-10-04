@@ -1,20 +1,17 @@
 package sk.ygor.scalactica2d.js.scenario
 
-import org.scalajs.dom.raw.CanvasRenderingContext2D
-import sk.ygor.scalactica2d.js.animation.PositionConverter
-import sk.ygor.scalactica2d.js.util.Tree
+import sk.ygor.scalactica2d.js.util.SpaceObjectTree
 
 trait Scenario {
 
   def name: String
 
-  def spaceObjects(): Tree
+  def mission: Mission = Mission(List(
+    Mission.Step("TODO: step 1", Mission.NextStep),
+    Mission.Step("TODO: step 2", Mission.NextStep),
+    Mission.Step("TODO: step 3", Mission.Condition("TODO: add condition")),
+  ))
 
-  def calculateStep(): Unit
-
-  def draw(ctx: CanvasRenderingContext2D, positionConverter: PositionConverter): Unit = {
-    spaceObjects().all.foreach(spaceObject => spaceObject.draw(ctx, positionConverter))
-  }
-
+  def createInitialSpaceObjectTree(): SpaceObjectTree
 
 }

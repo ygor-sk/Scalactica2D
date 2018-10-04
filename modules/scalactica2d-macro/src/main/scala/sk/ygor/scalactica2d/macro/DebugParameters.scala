@@ -6,9 +6,9 @@ import scala.language.experimental.macros
 /**
   * Inspired by http://www.warski.org/blog/2012/12/starting-with-scala-macros-a-short-tutorial/
   */
-object DebugMacro {
+object DebugParameters {
 
-  def debugParameters(params: Any*): String = macro debugParameters_Impl
+  def apply(params: Any*): String = macro debugParameters_Impl
 
   def debugParameters_Impl(c: blackbox.Context)(params: c.Expr[Any]*): c.Expr[String] = {
     import c.universe._

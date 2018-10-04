@@ -7,7 +7,7 @@ import sk.ygor.scalactica2d.js.units.{Meter, Position, Speed}
 case class Planet(name: String,
                   var position: Position,
                   radius: Meter,
-                  var speed: Speed) extends CelestialObject {
+                  var speed: Speed) extends MovingObject {
 
   override def draw(ctx: CanvasRenderingContext2D, positionConverter: PositionConverter): Unit = {
     val planetCanvasPosition = positionConverter.toPixelPosition(position)

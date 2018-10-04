@@ -2,8 +2,8 @@ package sk.ygor.scalactica2d.js
 
 import org.querki.jquery.$
 import org.scalajs.dom
-import org.scalajs.dom.CanvasRenderingContext2D
 import org.scalajs.dom.raw.HTMLCanvasElement
+import sk.ygor.scalactica2d.shared.Elements
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
@@ -14,10 +14,7 @@ object Scalactica2dJavascriptApplication {
   def main(): Unit = {
     val components = new Scalactica2dJavascriptComponents {
       override def canvas: HTMLCanvasElement =
-        dom.document.getElementById("scalactica2dCanvas").asInstanceOf[HTMLCanvasElement]
-
-      override def ctx: CanvasRenderingContext2D =
-        canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+        dom.document.getElementById(Elements.scalactica2dCanvas.name).asInstanceOf[HTMLCanvasElement]
     }
     $(() => components.userInterface.setup())
   }

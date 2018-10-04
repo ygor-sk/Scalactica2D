@@ -13,5 +13,5 @@ case class Position(x: Meter, y: Meter) {
 }
 
 object Position {
-  def zero: Position = Position(Meter(0), Meter(0))
+  val zero: Position = Position(Meter(0), Meter(0))
 }
